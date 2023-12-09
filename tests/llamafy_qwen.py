@@ -67,18 +67,18 @@ def save_weight(
             elif "lm_head" in key:
                 llama2_state_dict[key] = value
             else:
-                raise KeyError("Unable to process key {}".format(key))
+                raise KeyError(f"Unable to process key {key}")
 
     shards, index = shard_checkpoint(llama2_state_dict, max_shard_size=shard_size, weights_name=WEIGHTS_NAME)
     for shard_file, shard in shards.items():
         torch.save(shard, os.path.join(output_dir, shard_file))
 
     if index is None:
-        print("Model weights saved in {}".format(os.path.join(output_dir, WEIGHTS_NAME)))
+        print(f"Model weights saved in {os.path.join(output_dir, WEIGHTS_NAME)}")
     else:
         with open(os.path.join(output_dir, WEIGHTS_INDEX_NAME), "w", encoding="utf-8") as f:
             json.dump(index, f, indent=2, sort_keys=True)
-        print("Model weights saved in {}".format(output_dir))
+        print(f"Model weights saved in {output_dir}")
 
     return str(torch_dtype).replace("torch.", "")
 
@@ -114,7 +114,7 @@ def save_config(
 
     with open(os.path.join(output_dir, CONFIG_NAME), "w", encoding="utf-8") as f:
         json.dump(llama2_config_dict, f, indent=2)
-    print("Model config saved in {}".format(os.path.join(output_dir, CONFIG_NAME)))
+    print(f"Model config saved in {os.path.join(output_dir, CONFIG_NAME)}")
 
 
 def llamafy_qwen(

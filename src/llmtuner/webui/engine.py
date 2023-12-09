@@ -49,10 +49,12 @@ class Engine:
                 else:
                     yield self._form_dict({"eval.resume_btn": {"value": True}})
             else:
-                yield self._form_dict({
-                    "train.output_dir": {"value": "train_" + get_time()},
-                    "eval.output_dir": {"value": "eval_" + get_time()},
-                })
+                yield self._form_dict(
+                    {
+                        "train.output_dir": {"value": f"train_{get_time()}"},
+                        "eval.output_dir": {"value": f"eval_{get_time()}"},
+                    }
+                )
 
     def change_lang(self, lang: str) -> Dict[Component, Dict[str, Any]]:
         return {

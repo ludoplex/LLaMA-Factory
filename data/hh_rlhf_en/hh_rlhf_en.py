@@ -10,17 +10,17 @@ _LICENSE = "mit"
 _URL = "https://huggingface.co/datasets/Anthropic/hh-rlhf/resolve/main/"
 _URLS = {
     "train": [
-        _URL + "harmless-base/train.jsonl.gz",
-        _URL + "helpful-base/train.jsonl.gz",
-        _URL + "helpful-online/train.jsonl.gz",
-        _URL + "helpful-rejection-sampled/train.jsonl.gz"
+        f"{_URL}harmless-base/train.jsonl.gz",
+        f"{_URL}helpful-base/train.jsonl.gz",
+        f"{_URL}helpful-online/train.jsonl.gz",
+        f"{_URL}helpful-rejection-sampled/train.jsonl.gz",
     ],
     "test": [
-        _URL + "harmless-base/test.jsonl.gz",
-        _URL + "helpful-base/test.jsonl.gz",
-        _URL + "helpful-online/test.jsonl.gz",
-        _URL + "helpful-rejection-sampled/test.jsonl.gz"
-    ]
+        f"{_URL}harmless-base/test.jsonl.gz",
+        f"{_URL}helpful-base/test.jsonl.gz",
+        f"{_URL}helpful-online/test.jsonl.gz",
+        f"{_URL}helpful-rejection-sampled/test.jsonl.gz",
+    ],
 }
 
 
@@ -81,12 +81,11 @@ class HhRlhfEn(datasets.GeneratorBasedBuilder):
                     while prompt.rfind("\n\nAssistant: ") != -1:
                         assist_idx = prompt.rfind("\n\nAssistant: ")
                         human_idx = prompt.rfind("\n\nHuman: ")
-                        if human_idx != -1:
-                            old_query = prompt[human_idx+9:assist_idx].strip()
-                            old_resp = prompt[assist_idx+13:].strip()
-                            history.insert(0, (old_query, old_resp))
-                        else:
+                        if human_idx == -1:
                             break
+                        old_query = prompt[human_idx+9:assist_idx].strip()
+                        old_resp = prompt[assist_idx+13:].strip()
+                        history.insert(0, (old_query, old_resp))
                         prompt = prompt[:human_idx]
 
                     yield key, {

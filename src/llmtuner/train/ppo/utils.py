@@ -27,10 +27,16 @@ def replace_model(model: "AutoModelForCausalLMWithValueHead", target: Literal["d
         setattr(model, "default_head_bias", valuehead_state_dict["summary.bias"].detach().clone())
 
     model.pretrained_model.set_adapter(target) # set the LoRA adapter to be active
-    model.v_head.load_state_dict({
-        "summary.weight": model.get_buffer("{}_head_weight".format(target)).detach().clone(),
-        "summary.bias": model.get_buffer("{}_head_bias".format(target)).detach().clone()
-    })
+    model.v_head.load_state_dict(
+        {
+            "summary.weight": model.get_buffer(f"{target}_head_weight")
+            .detach()
+            .clone(),
+            "summary.bias": model.get_buffer(f"{target}_head_bias")
+            .detach()
+            .clone(),
+        }
+    )
 
 
 def dump_layernorm(model: "PreTrainedModel") -> Dict[str, torch.Tensor]:

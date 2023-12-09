@@ -28,12 +28,12 @@ class CustomDPOTrainer(DPOTrainer):
                 disable_dropout_in_model(ref_model)
 
         self.is_encoder_decoder = model.config.is_encoder_decoder
-        self.ref_model = ref_model
         self.use_dpo_data_collator = True # hack to avoid warning
         self.generate_during_eval = False # disable at evaluation
         self.label_pad_token_id = IGNORE_INDEX
         self.padding_value = 0
         self.beta = beta
+        self.ref_model = ref_model
         self.loss_type = loss_type
         self._stored_metrics = defaultdict(lambda: defaultdict(list))
 
@@ -43,10 +43,9 @@ class CustomDPOTrainer(DPOTrainer):
 
         if ref_model is not None:
             if self.is_deepspeed_enabled:
-                if not (
-                    getattr(ref_model, "is_loaded_in_8bit", False)
-                    or getattr(ref_model, "is_loaded_in_4bit", False)
-                ): # quantized models are already set on the correct device
+                if not getattr(
+                    ref_model, "is_loaded_in_8bit", False
+                ) and not getattr(ref_model, "is_loaded_in_4bit", False): # quantized models are already set on the correct device
                     self.ref_model = self._prepare_deepspeed(self.ref_model)
             else:
                 self.ref_model = self.accelerator.prepare_model(self.ref_model, evaluation_mode=True)

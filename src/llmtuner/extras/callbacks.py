@@ -38,7 +38,9 @@ class SavePeftModelCallback(TrainerCallback):
         if args.should_save:
             _save_model_with_valuehead(
                 model=unwrap_model(kwargs.pop("model")),
-                output_dir=os.path.join(args.output_dir, "{}-{}".format(PREFIX_CHECKPOINT_DIR, state.global_step))
+                output_dir=os.path.join(
+                    args.output_dir, f"{PREFIX_CHECKPOINT_DIR}-{state.global_step}"
+                ),
             )
 
     def on_train_end(self, args: "TrainingArguments", state: "TrainerState", control: "TrainerControl", **kwargs):

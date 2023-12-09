@@ -63,13 +63,12 @@ class BelleMultiturn(datasets.GeneratorBasedBuilder):
                 while prompt.rfind("Assistant:") != -1:
                     assist_idx = prompt.rfind("Assistant:")
                     human_idx = prompt.rfind("Human:")
-                    if human_idx != -1:
-                        old_query = prompt[human_idx+6:assist_idx].strip()
-                        old_resp = prompt[assist_idx+10:].strip()
-                        conversations.insert(0, {"from": "gpt", "value": old_resp})
-                        conversations.insert(0, {"from": "human", "value": old_query})
-                    else:
+                    if human_idx == -1:
                         break
+                    old_query = prompt[human_idx+6:assist_idx].strip()
+                    old_resp = prompt[assist_idx+10:].strip()
+                    conversations.insert(0, {"from": "gpt", "value": old_resp})
+                    conversations.insert(0, {"from": "human", "value": old_query})
                     prompt = prompt[:human_idx].strip()
 
                 yield key, {"conversations": conversations}

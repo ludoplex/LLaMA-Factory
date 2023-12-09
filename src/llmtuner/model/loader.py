@@ -96,11 +96,8 @@ def load_model_and_tokenizer(
         for dtype_name, dtype in [("fp16", torch.float16), ("bf16", torch.bfloat16), ("fp32", torch.float32)]:
             setattr(config, dtype_name, getattr(config, "torch_dtype", None) == dtype)
 
-    # Set RoPE scaling
     if model_args.rope_scaling is not None:
-        if not hasattr(config, "rope_scaling"):
-            logger.warning("Current model does not support RoPE scaling.")
-        else:
+        if hasattr(config, "rope_scaling"):
             if is_trainable:
                 if model_args.rope_scaling == "dynamic":
                     logger.warning(
@@ -118,10 +115,12 @@ def load_model_and_tokenizer(
                 scaling_factor = 2.0
 
             setattr(config, "rope_scaling", {"type": model_args.rope_scaling, "factor": scaling_factor})
-            logger.info("Using {} scaling strategy and setting scaling factor to {}".format(
-                model_args.rope_scaling, scaling_factor
-            ))
+            logger.info(
+                f"Using {model_args.rope_scaling} scaling strategy and setting scaling factor to {scaling_factor}"
+            )
 
+        else:
+            logger.warning("Current model does not support RoPE scaling.")
     # Set FlashAttention-2
     if model_args.flash_attn:
         if getattr(config, "model_type", None) == "llama":
@@ -153,7 +152,9 @@ def load_model_and_tokenizer(
             model_args.quantization_bit = None
         config_kwargs["device_map"] = {"": get_current_device()}
         quantization_config = getattr(config, "quantization_config", None)
-        logger.info("Loading {}-bit quantized model.".format(quantization_config.get("bits", -1)))
+        logger.info(
+            f'Loading {quantization_config.get("bits", -1)}-bit quantized model.'
+        )
 
     # Quantization configurations (using bitsandbytes library)
     if model_args.quantization_bit is not None:
@@ -174,7 +175,7 @@ def load_model_and_tokenizer(
             )
 
         config_kwargs["device_map"] = {"": get_current_device()}
-        logger.info("Quantizing model to {} bit.".format(model_args.quantization_bit))
+        logger.info(f"Quantizing model to {model_args.quantization_bit} bit.")
 
     # Load pre-trained models (without valuehead)
     model = AutoModelForCausalLM.from_pretrained(
@@ -218,7 +219,7 @@ def load_model_and_tokenizer(
         vhead_params = load_valuehead_params(vhead_path, model_args)
         if vhead_params is not None:
             model.load_state_dict(vhead_params, strict=False)
-            logger.info("Loaded valuehead from checkpoint: {}".format(vhead_path))
+            logger.info(f"Loaded valuehead from checkpoint: {vhead_path}")
 
     # Prepare model for inference
     if not is_trainable:

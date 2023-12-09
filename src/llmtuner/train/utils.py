@@ -29,7 +29,7 @@ def create_modelcard_and_push(
         try:
             trainer.create_model_card(**get_modelcard_args(model_args, data_args, finetuning_args))
         except Exception as err:
-            logger.warning("Failed to create model card: {}".format(str(err)))
+            logger.warning(f"Failed to create model card: {str(err)}")
 
 
 def create_ref_model(
@@ -54,15 +54,14 @@ def create_ref_model(
         ref_model, _ = load_model_and_tokenizer(
             ref_model_args, ref_finetuning_args, is_trainable=False, add_valuehead=add_valuehead
         )
-        logger.info("Created reference model from {}".format(finetuning_args.ref_model))
+        logger.info(f"Created reference model from {finetuning_args.ref_model}")
+    elif finetuning_args.finetuning_type == "lora":
+        ref_model = None
     else:
-        if finetuning_args.finetuning_type == "lora":
-            ref_model = None
-        else:
-            ref_model, _ = load_model_and_tokenizer(
-                model_args, finetuning_args, is_trainable=False, add_valuehead=add_valuehead
-            )
-            logger.info("Created reference model from the model itself.")
+        ref_model, _ = load_model_and_tokenizer(
+            model_args, finetuning_args, is_trainable=False, add_valuehead=add_valuehead
+        )
+        logger.info("Created reference model from the model itself.")
 
     return ref_model
 
@@ -77,7 +76,7 @@ def create_reward_model(
     """
     if finetuning_args.reward_model_type == "api":
         assert finetuning_args.reward_model.startswith("http"), "Please provide full url."
-        logger.info("Use reward server {}".format(finetuning_args.reward_model))
+        logger.info(f"Use reward server {finetuning_args.reward_model}")
         return finetuning_args.reward_model
     elif finetuning_args.reward_model_type == "lora":
         model.pretrained_model.load_adapter(finetuning_args.reward_model, "reward")
@@ -90,7 +89,9 @@ def create_reward_model(
         model.register_buffer("reward_head_bias", vhead_params["v_head.summary.bias"], persistent=False)
         model.register_buffer("default_head_weight", torch.zeros_like(vhead_params["v_head.summary.weight"]), persistent=False)
         model.register_buffer("default_head_bias", torch.zeros_like(vhead_params["v_head.summary.bias"]), persistent=False)
-        logger.info("Loaded adapter weights of reward model from {}".format(finetuning_args.reward_model))
+        logger.info(
+            f"Loaded adapter weights of reward model from {finetuning_args.reward_model}"
+        )
         return None
     else:
         reward_model_args_dict = model_args.to_dict()
@@ -104,6 +105,8 @@ def create_reward_model(
         reward_model, _ = load_model_and_tokenizer(
             reward_model_args, reward_finetuning_args, is_trainable=False, add_valuehead=True
         )
-        logger.info("Loaded full weights of reward model from {}".format(finetuning_args.reward_model))
+        logger.info(
+            f"Loaded full weights of reward model from {finetuning_args.reward_model}"
+        )
         logger.warning("Please ensure the ppo model and reward model share SAME tokenizer and vocabulary.")
         return reward_model

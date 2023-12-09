@@ -77,10 +77,7 @@ class Runner:
         self.running_data = None
         self.running = False
         torch_gc()
-        if self.aborted:
-            return ALERTS["info_aborted"][lang]
-        else:
-            return finish_info
+        return ALERTS["info_aborted"][lang] if self.aborted else finish_info
 
     def _parse_train_args(self, data: Dict[Component, Any]) -> Dict[str, Any]:
         get = lambda name: data[self.manager.get_elem_by_name(name)]
@@ -198,8 +195,7 @@ class Runner:
         return args
 
     def _preview(self, data: Dict[Component, Any], do_train: bool) -> Generator[Tuple[str, Dict[str, Any]], None, None]:
-        error = self._initialize(data, do_train, from_preview=True)
-        if error:
+        if error := self._initialize(data, do_train, from_preview=True):
             gr.Warning(error)
             yield error, gr.update(visible=False)
         else:
@@ -207,8 +203,7 @@ class Runner:
             yield gen_cmd(args), gr.update(visible=False)
 
     def _launch(self, data: Dict[Component, Any], do_train: bool) -> Generator[Tuple[str, Dict[str, Any]], None, None]:
-        error = self._initialize(data, do_train, from_preview=False)
-        if error:
+        if error := self._initialize(data, do_train, from_preview=False):
             gr.Warning(error)
             yield error, gr.update(visible=False)
         else:
@@ -235,9 +230,11 @@ class Runner:
         get = lambda name: self.running_data[self.manager.get_elem_by_name(name)]
         self.running = True
         lang = get("top.lang")
-        output_dir = get_save_dir(get("top.model_name"), get("top.finetuning_type"), get(
-            "{}.output_dir".format("train" if self.do_train else "eval")
-        ))
+        output_dir = get_save_dir(
+            get("top.model_name"),
+            get("top.finetuning_type"),
+            get(f'{"train" if self.do_train else "eval"}.output_dir'),
+        )
 
         while self.thread.is_alive():
             time.sleep(2)
@@ -247,14 +244,14 @@ class Runner:
                 yield self.logger_handler.log, update_process_bar(self.trainer_callback)
 
         if self.do_train:
-            if os.path.exists(os.path.join(output_dir, TRAINING_ARGS_NAME)):
-                finish_info = ALERTS["info_finished"][lang]
-            else:
-                finish_info = ALERTS["err_failed"][lang]
+            finish_info = (
+                ALERTS["info_finished"][lang]
+                if os.path.exists(os.path.join(output_dir, TRAINING_ARGS_NAME))
+                else ALERTS["err_failed"][lang]
+            )
+        elif os.path.exists(os.path.join(output_dir, "all_results.json")):
+            finish_info = get_eval_results(os.path.join(output_dir, "all_results.json"))
         else:
-            if os.path.exists(os.path.join(output_dir, "all_results.json")):
-                finish_info = get_eval_results(os.path.join(output_dir, "all_results.json"))
-            else:
-                finish_info = ALERTS["err_failed"][lang]
+            finish_info = ALERTS["err_failed"][lang]
 
         yield self._finalize(lang, finish_info), gr.update(visible=False)

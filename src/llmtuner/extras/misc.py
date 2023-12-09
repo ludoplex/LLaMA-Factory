@@ -71,11 +71,11 @@ def count_parameters(model: torch.nn.Module) -> Tuple[int, int]:
 def get_current_device() -> torch.device:
     import accelerate
     if accelerate.utils.is_xpu_available():
-        device = "xpu:{}".format(os.environ.get("LOCAL_RANK", "0"))
+        device = f'xpu:{os.environ.get("LOCAL_RANK", "0")}'
     elif accelerate.utils.is_npu_available():
-        device = "npu:{}".format(os.environ.get("LOCAL_RANK", "0"))
+        device = f'npu:{os.environ.get("LOCAL_RANK", "0")}'
     elif torch.cuda.is_available():
-        device = "cuda:{}".format(os.environ.get("LOCAL_RANK", "0"))
+        device = f'cuda:{os.environ.get("LOCAL_RANK", "0")}'
     else:
         device = "cpu"
 

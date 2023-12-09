@@ -97,7 +97,13 @@ class PairwiseTrainer(Trainer):
         chosen_scores, rejected_scores = predict_results.predictions
 
         with open(output_prediction_file, "w", encoding="utf-8") as writer:
-            res: List[str] = []
-            for c_score, r_score in zip(chosen_scores, rejected_scores):
-                res.append(json.dumps({"chosen": round(float(c_score), 2), "rejected": round(float(r_score), 2)}))
+            res: List[str] = [
+                json.dumps(
+                    {
+                        "chosen": round(float(c_score), 2),
+                        "rejected": round(float(r_score), 2),
+                    }
+                )
+                for c_score, r_score in zip(chosen_scores, rejected_scores)
+            ]
             writer.write("\n".join(res))

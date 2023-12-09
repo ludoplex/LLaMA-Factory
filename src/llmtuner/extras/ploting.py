@@ -19,7 +19,7 @@ def smooth(scalars: List[float]) -> List[float]:
     EMA implementation according to TensorBoard.
     """
     last = scalars[0]
-    smoothed = list()
+    smoothed = []
     weight = 1.8 * (1 / (1 + math.exp(-0.05 * len(scalars))) - 0.5) # a sigmoid function
     for next_val in scalars:
         smoothed_val = last * weight + (1 - weight) * next_val
@@ -40,16 +40,20 @@ def plot_loss(save_dictionary: os.PathLike, keys: Optional[List[str]] = ["loss"]
                 steps.append(data["log_history"][i]["step"])
                 metrics.append(data["log_history"][i][key])
 
-        if len(metrics) == 0:
+        if not metrics:
             logger.warning(f"No metric {key} to plot.")
             continue
 
         plt.figure()
         plt.plot(steps, metrics, alpha=0.4, label="original")
         plt.plot(steps, smooth(metrics), label="smoothed")
-        plt.title("training {} of {}".format(key, save_dictionary))
+        plt.title(f"training {key} of {save_dictionary}")
         plt.xlabel("step")
         plt.ylabel(key)
         plt.legend()
-        plt.savefig(os.path.join(save_dictionary, "training_{}.png".format(key)), format="png", dpi=100)
-        print("Figure saved:", os.path.join(save_dictionary, "training_{}.png".format(key)))
+        plt.savefig(
+            os.path.join(save_dictionary, f"training_{key}.png"),
+            format="png",
+            dpi=100,
+        )
+        print("Figure saved:", os.path.join(save_dictionary, f"training_{key}.png"))

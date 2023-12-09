@@ -53,8 +53,7 @@ class Template:
         Returns multiple pairs of token ids representing prompts and responses respectively.
         """
         system, history = self._format(query, resp, history, system)
-        encoded_pairs = self._encode(tokenizer, system, history)
-        return encoded_pairs
+        return self._encode(tokenizer, system, history)
 
     def _format(
         self,
@@ -83,11 +82,7 @@ class Template:
         if tokenizer.eos_token_id is None:
             raise ValueError("EOS token is required.")
 
-        if self.efficient_eos: # used in baichuan, qwen, chatglm, etc.
-            eos_ids = []
-        else:
-            eos_ids = [tokenizer.eos_token_id]
-
+        eos_ids = [] if self.efficient_eos else [tokenizer.eos_token_id]
         return bos_ids, eos_ids
 
     def _encode(
@@ -146,7 +141,7 @@ class Template:
             elif isinstance(elem, dict):
                 token_ids = token_ids + [tokenizer.convert_tokens_to_ids(elem.get("token"))]
             else:
-                raise ValueError("Input must be string or dict[str, str], got {}".format(type(elem)))
+                raise ValueError(f"Input must be string or dict[str, str], got {type(elem)}")
 
         return token_ids
 
@@ -207,17 +202,17 @@ def get_template_and_fix_tokenizer(
 ) -> Template:
     if tokenizer.eos_token_id is None:
         tokenizer.eos_token = "<|endoftext|>"
-        logger.info("Add eos token: {}".format(tokenizer.eos_token))
+        logger.info(f"Add eos token: {tokenizer.eos_token}")
 
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
-        logger.info("Add pad token: {}".format(tokenizer.pad_token))
+        logger.info(f"Add pad token: {tokenizer.pad_token}")
 
     if name is None:
         return None
 
     template = templates.get(name, None)
-    assert template is not None, "Template {} does not exist.".format(name)
+    assert template is not None, f"Template {name} does not exist."
     tokenizer.add_special_tokens(
         dict(additional_special_tokens=template.stop_words),
         replace_additional_special_tokens=False

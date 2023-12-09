@@ -25,9 +25,11 @@ def can_preview(dataset_dir: str, dataset: list) -> Dict[str, Any]:
         dataset_info = json.load(f)
 
     if (
-        len(dataset) > 0
+        dataset
         and "file_name" in dataset_info[dataset[0]]
-        and os.path.isfile(os.path.join(dataset_dir, dataset_info[dataset[0]]["file_name"]))
+        and os.path.isfile(
+            os.path.join(dataset_dir, dataset_info[dataset[0]]["file_name"])
+        )
     ):
         return gr.update(interactive=True)
     else:
@@ -45,7 +47,7 @@ def get_preview(dataset_dir: str, dataset: list, page_index: int) -> Tuple[int, 
         elif data_file.endswith(".jsonl"):
             data = [json.loads(line) for line in f]
         else:
-            data = [line for line in f]
+            data = list(f)
     return len(data), data[PAGE_SIZE * page_index : PAGE_SIZE * (page_index + 1)], gr.update(visible=True)
 
 
