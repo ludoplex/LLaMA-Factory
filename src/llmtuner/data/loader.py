@@ -92,7 +92,7 @@ def get_dataset(
                             raise ValueError("Only accepts conversation in u/a/u/a/u/a order.")
                     msg_pairs.append((msg_list[idx][dataset_attr.content], msg_list[idx + 1][dataset_attr.content]))
 
-                if len(msg_pairs) != 0:
+                if msg_pairs:
                     outputs["prompt"].append(msg_pairs[-1][0])
                     outputs["query"].append("")
                     outputs["response"].append(msg_pairs[-1][1])

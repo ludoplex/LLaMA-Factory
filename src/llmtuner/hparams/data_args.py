@@ -138,7 +138,9 @@ class DataArguments:
                 dataset_info = json.load(f)
         except Exception as err:
             if self.dataset is not None:
-                raise ValueError("Cannot open {} due to {}.".format(os.path.join(self.dataset_dir, DATA_CONFIG), str(err)))
+                raise ValueError(
+                    f"Cannot open {os.path.join(self.dataset_dir, DATA_CONFIG)} due to {str(err)}."
+                )
             dataset_info = None
 
         prompt_list = self.system_prompt.split("|") if self.system_prompt else [None]
@@ -151,7 +153,7 @@ class DataArguments:
         self.dataset_list: List[DatasetAttr] = []
         for i, name in enumerate(dataset_names):
             if name not in dataset_info:
-                raise ValueError("Undefined dataset {} in {}.".format(name, DATA_CONFIG))
+                raise ValueError(f"Undefined dataset {name} in {DATA_CONFIG}.")
 
             if "hf_hub_url" in dataset_info[name]:
                 dataset_attr = DatasetAttr("hf_hub", dataset_name=dataset_info[name]["hf_hub_url"])

@@ -42,5 +42,4 @@ class ExampleDataset(datasets.GeneratorBasedBuilder):
 
     def _generate_examples(self, filepath: str) -> Dict[int, Dict[str, Any]]:
         example_dataset = json.load(open(filepath, "r", encoding="utf-8"))
-        for key, example in enumerate(example_dataset):
-            yield key, example
+        yield from enumerate(example_dataset)

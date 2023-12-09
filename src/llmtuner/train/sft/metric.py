@@ -45,7 +45,7 @@ class ComputeMetrics:
             hypothesis = list(jieba.cut(pred))
             reference = list(jieba.cut(label))
 
-            if len(" ".join(hypothesis).split()) == 0 or len(" ".join(reference).split()) == 0:
+            if not " ".join(hypothesis).split() or not " ".join(reference).split():
                 result = {"rouge-1": {"f": 0.0}, "rouge-2": {"f": 0.0}, "rouge-l": {"f": 0.0}}
             else:
                 rouge = Rouge()

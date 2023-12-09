@@ -64,7 +64,7 @@ def register_eval_template(
 
 def get_eval_template(name: str) -> EvalTemplate:
     eval_template = eval_templates.get(name, None)
-    assert eval_template is not None, "Template {} does not exist.".format(name)
+    assert eval_template is not None, f"Template {name} does not exist."
     return eval_template
 
 

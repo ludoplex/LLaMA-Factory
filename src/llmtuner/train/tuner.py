@@ -42,7 +42,10 @@ def export_model(args: Optional[Dict[str, Any]] = None):
         raise ValueError("Cannot export a GPTQ or AWQ quantized model.")
 
     model.config.use_cache = True
-    model.save_pretrained(finetuning_args.export_dir, max_shard_size="{}GB".format(finetuning_args.export_size))
+    model.save_pretrained(
+        finetuning_args.export_dir,
+        max_shard_size=f"{finetuning_args.export_size}GB",
+    )
 
     try:
         tokenizer.padding_side = "left" # restore padding side

@@ -47,15 +47,19 @@ def init_adapter(
         if finetuning_args.num_layer_trainable > 0: # fine-tuning the last n layers if num_layer_trainable > 0
             trainable_layer_ids = [num_layers - k - 1 for k in range(finetuning_args.num_layer_trainable)]
         else: # fine-tuning the first n layers if num_layer_trainable < 0
-            trainable_layer_ids = [k for k in range(-finetuning_args.num_layer_trainable)]
+            trainable_layer_ids = list(range(-finetuning_args.num_layer_trainable))
 
         trainable_layers = []
         for module_name in finetuning_args.name_module_trainable:
-            for idx in trainable_layer_ids:
-                trainable_layers.append("{:d}.{}".format(idx, module_name))
-
+            trainable_layers.extend(
+                "{:d}.{}".format(idx, module_name)
+                for idx in trainable_layer_ids
+            )
         for name, param in model.named_parameters():
-            if not any(trainable_layer in name for trainable_layer in trainable_layers):
+            if all(
+                trainable_layer not in name
+                for trainable_layer in trainable_layers
+            ):
                 param.requires_grad_(False)
             else:
                 param.data = param.data.to(torch.float32)
@@ -80,7 +84,7 @@ def init_adapter(
                 model = model.merge_and_unload()
 
             if len(checkpoints_to_merge) > 0:
-                logger.info("Merged {} model checkpoint(s).".format(len(checkpoints_to_merge)))
+                logger.info(f"Merged {len(checkpoints_to_merge)} model checkpoint(s).")
 
             if checkpoint_to_resume is not None: # resume lora training
                 model = PeftModel.from_pretrained(model, checkpoint_to_resume, is_trainable=is_trainable)
@@ -103,6 +107,8 @@ def init_adapter(
             model = get_peft_model(model, lora_config)
 
     if model_args.checkpoint_dir is not None:
-        logger.info("Loaded fine-tuned model from checkpoint(s): {}".format(",".join(model_args.checkpoint_dir)))
+        logger.info(
+            f'Loaded fine-tuned model from checkpoint(s): {",".join(model_args.checkpoint_dir)}'
+        )
 
     return model

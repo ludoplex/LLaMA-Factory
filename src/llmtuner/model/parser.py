@@ -99,7 +99,9 @@ def get_train_args(args: Optional[Dict[str, Any]] = None) -> _TRAIN_CLS:
     if finetuning_args.stage == "ppo" and not training_args.do_train:
         raise ValueError("PPO training does not support evaluation, use the SFT stage to evaluate models.")
 
-    if finetuning_args.stage in ["rm", "dpo"] and (not all([data_attr.ranking for data_attr in data_args.dataset_list])):
+    if finetuning_args.stage in ["rm", "dpo"] and not all(
+        data_attr.ranking for data_attr in data_args.dataset_list
+    ):
         raise ValueError("Please use ranked datasets for reward modeling or DPO training.")
 
     if finetuning_args.stage == "ppo" and model_args.shift_attn:
@@ -153,14 +155,14 @@ def get_train_args(args: Optional[Dict[str, Any]] = None) -> _TRAIN_CLS:
             training_args_dict = training_args.to_dict()
             training_args_dict.update(dict(resume_from_checkpoint=last_checkpoint))
             training_args = Seq2SeqTrainingArguments(**training_args_dict)
-            logger.info("Resuming training from {}. Change `output_dir` or use `overwrite_output_dir` to avoid.".format(
-                training_args.resume_from_checkpoint
-            ))
+            logger.info(
+                f"Resuming training from {training_args.resume_from_checkpoint}. Change `output_dir` or use `overwrite_output_dir` to avoid."
+            )
 
     if finetuning_args.stage in ["rm", "ppo"] and training_args.resume_from_checkpoint is not None:
-        logger.warning("Add {} to `checkpoint_dir` to resume training from checkpoint.".format(
-            training_args.resume_from_checkpoint
-        ))
+        logger.warning(
+            f"Add {training_args.resume_from_checkpoint} to `checkpoint_dir` to resume training from checkpoint."
+        )
 
     # postprocess model_args
     model_args.compute_dtype = (
@@ -169,10 +171,9 @@ def get_train_args(args: Optional[Dict[str, Any]] = None) -> _TRAIN_CLS:
     model_args.model_max_length = data_args.cutoff_len
 
     # Log on each process the small summary:
-    logger.info("Process rank: {}, device: {}, n_gpu: {}\n  distributed training: {}, compute dtype: {}".format(
-        training_args.local_rank, training_args.device, training_args.n_gpu,
-        bool(training_args.local_rank != -1), str(model_args.compute_dtype)
-    ))
+    logger.info(
+        f"Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}\n  distributed training: {training_args.local_rank != -1}, compute dtype: {str(model_args.compute_dtype)}"
+    )
     logger.info(f"Training/evaluation parameters {training_args}")
 
     # Set seed before initializing model.

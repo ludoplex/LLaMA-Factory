@@ -25,21 +25,23 @@ def dispatch_model(model: "PreTrainedModel") -> "PreTrainedModel":
     if getattr(model, "quantization_method", None): # already set on current device
         return model
 
-    if torch.cuda.device_count() > 1 and getattr(model.config, "model_type", None) != "chatglm":
-        from accelerate import dispatch_model
-        from accelerate.utils import infer_auto_device_map, get_balanced_memory
-
-        if model._no_split_modules is None:
-            raise ValueError("The model class needs to implement the `_no_split_modules` attribute.")
-
-        kwargs = {"dtype": model.dtype, "no_split_module_classes": model._no_split_modules}
-        max_memory = get_balanced_memory(model, **kwargs)
-        # Make sure tied weights are tied before creating the device map.
-        model.tie_weights()
-        device_map = infer_auto_device_map(model, max_memory=max_memory, **kwargs)
-        return dispatch_model(model, device_map)
-    else:
+    if (
+        torch.cuda.device_count() <= 1
+        or getattr(model.config, "model_type", None) == "chatglm"
+    ):
         return model.cuda()
+    from accelerate import dispatch_model
+    from accelerate.utils import infer_auto_device_map, get_balanced_memory
+
+    if model._no_split_modules is None:
+        raise ValueError("The model class needs to implement the `_no_split_modules` attribute.")
+
+    kwargs = {"dtype": model.dtype, "no_split_module_classes": model._no_split_modules}
+    max_memory = get_balanced_memory(model, **kwargs)
+    # Make sure tied weights are tied before creating the device map.
+    model.tie_weights()
+    device_map = infer_auto_device_map(model, max_memory=max_memory, **kwargs)
+    return dispatch_model(model, device_map)
 
 
 def find_all_linear_modules(model: "PreTrainedModel") -> List[str]:
@@ -53,21 +55,23 @@ def find_all_linear_modules(model: "PreTrainedModel") -> List[str]:
         import bitsandbytes as bnb
         linear_cls = bnb.nn.Linear4bit if getattr(model, "is_loaded_in_4bit", False) else bnb.nn.Linear8bitLt
     else:
-        raise ValueError("Finding linear modules for {} models is not supported.".format(quantization_method))
+        raise ValueError(
+            f"Finding linear modules for {quantization_method} models is not supported."
+        )
 
     output_layer_names = ["lm_head"]
     if model.config.model_type == "chatglm":
         output_layer_names.append("output_layer")
 
-    module_names = set()
-    for name, module in model.named_modules():
-        if (
-            isinstance(module, linear_cls)
-            and not any([output_layer in name for output_layer in output_layer_names])
-        ):
-            module_names.add(name.split(".")[-1])
-
-    logger.info("Found linear modules: {}".format(",".join(module_names)))
+    module_names = {
+        name.split(".")[-1]
+        for name, module in model.named_modules()
+        if isinstance(module, linear_cls)
+        and all(
+            output_layer not in name for output_layer in output_layer_names
+        )
+    }
+    logger.info(f'Found linear modules: {",".join(module_names)}')
     return list(module_names)
 
 
@@ -110,7 +114,7 @@ def load_valuehead_params(
         vhead_file = cached_file(filename=WEIGHTS_NAME, **kwargs)
         return torch.load(vhead_file, map_location="cpu")
     except Exception as err:
-        logger.info("Failed to load {}: {}".format(WEIGHTS_NAME, str(err)))
+        logger.info(f"Failed to load {WEIGHTS_NAME}: {str(err)}")
 
     try:
         from safetensors import safe_open
@@ -121,9 +125,11 @@ def load_valuehead_params(
                 "v_head.summary.bias": f.get_tensor("v_head.summary.bias")
             }
     except Exception as err:
-        logger.info("Failed to load {}: {}".format(SAFE_WEIGHTS_NAME, str(err)))
+        logger.info(f"Failed to load {SAFE_WEIGHTS_NAME}: {str(err)}")
 
-    logger.warning("Provided path ({}) does not contain valuehead weights.".format(path_or_repo_id))
+    logger.warning(
+        f"Provided path ({path_or_repo_id}) does not contain valuehead weights."
+    )
     return None
 
 

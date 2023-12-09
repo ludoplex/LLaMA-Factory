@@ -95,12 +95,15 @@ def list_checkpoint(model_name: str, finetuning_type: str) -> Dict[str, Any]:
     if model_name:
         save_dir = get_save_dir(model_name, finetuning_type)
         if save_dir and os.path.isdir(save_dir):
-            for checkpoint in os.listdir(save_dir):
-                if (
-                    os.path.isdir(os.path.join(save_dir, checkpoint))
-                    and any([os.path.isfile(os.path.join(save_dir, checkpoint, name)) for name in CKPT_NAMES])
-                ):
-                    checkpoints.append(checkpoint)
+            checkpoints.extend(
+                checkpoint
+                for checkpoint in os.listdir(save_dir)
+                if os.path.isdir(os.path.join(save_dir, checkpoint))
+                and any(
+                    os.path.isfile(os.path.join(save_dir, checkpoint, name))
+                    for name in CKPT_NAMES
+                )
+            )
     return gr.update(value=[], choices=checkpoints)
 
 
@@ -109,7 +112,9 @@ def load_dataset_info(dataset_dir: str) -> Dict[str, Dict[str, Any]]:
         with open(os.path.join(dataset_dir, DATA_CONFIG), "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as err:
-        print("Cannot open {} due to {}.".format(os.path.join(dataset_dir, DATA_CONFIG), str(err)))
+        print(
+            f"Cannot open {os.path.join(dataset_dir, DATA_CONFIG)} due to {str(err)}."
+        )
         return {}
 
 
